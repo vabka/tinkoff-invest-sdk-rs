@@ -91,6 +91,7 @@ impl InstrumentsClient {
         let schedules = data.exchanges;
         Ok(unsafe { std::mem::transmute(schedules) })
     }
+
     pub async fn trading_schedules(
         &mut self,
         exchange: String,
@@ -107,5 +108,9 @@ impl InstrumentsClient {
             )),
         };
         self.trading_schedules_internal(req).await
+    }
+
+    pub async fn bonds(&mut self) {
+        todo!()
     }
 }
