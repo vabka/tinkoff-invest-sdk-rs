@@ -16,7 +16,6 @@ pub use user_info::UserTariff;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum InstrumentsList {
-    Unspecified,
     Base,
     All
 }

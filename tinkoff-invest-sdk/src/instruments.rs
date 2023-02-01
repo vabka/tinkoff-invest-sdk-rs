@@ -119,7 +119,6 @@ impl InstrumentsClient {
 
     pub async fn bonds(&mut self, list: InstrumentsList) -> crate::Result<Vec<types::Bond>> {
         let numeric_status =  match list {
-            InstrumentsList::Unspecified => api::InstrumentStatus::Unspecified,
             InstrumentsList::Base => api::InstrumentStatus::Base,
             InstrumentsList::All => api::InstrumentStatus::All,
         } as i32;
