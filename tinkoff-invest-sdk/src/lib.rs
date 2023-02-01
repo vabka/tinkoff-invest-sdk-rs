@@ -35,37 +35,6 @@ macro_rules! service {
     }
 }
 pub(crate) use service;
-macro_rules! method {
-    ($method: ident, $req: ident, $ret: ident $(,empty)?) => {
-        #[inline]
-        pub async fn $method(&mut self) -> $crate::Result<$ret> {
-            let req = $req {};
-            let res = self.internal.$method(req).await;
-            let data = res?.into_inner().into();
-
-            $crate::Result::Ok(data)
-        }
-    };
-    ($method: ident, $req: ident, $ret: ident, thin) => {
-        #[inline]
-        pub async fn $method(&mut self, request: $req) -> $crate::Result<$ret> {
-            let res = self.internal.$method(request).await;
-            let data = res?.into_inner().into();
-
-            $crate::Result::Ok(data)
-        }
-    };
-    ($method: ident, $req: ident, $ret: ident, into) => {
-        #[inline]
-        pub async fn $method(&mut self, request: $req) -> $crate::Result<$ret> {
-            let res = self.internal.$method(request.into()).await;
-            let data = res?.into_inner().into();
-
-            $crate::Result::Ok(data)
-        }
-    };
-}
-pub(crate) use method;
 
 macro_rules! service_getter {
     ($name: ident, $service: ident) => {

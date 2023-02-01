@@ -8,7 +8,7 @@ async fn main() {
     let client = TinkoffInvestClient::connect(&token).await.unwrap();
     let mut instruments_client = client.instruments();
 
-    let today = Utc::today();
+    let today = Local::now().date_naive();
     let week_forward = today + Duration::days(6);
     let schedules = instruments_client
         .trading_schedules(String::from("moex"), today..=week_forward)
@@ -19,7 +19,7 @@ async fn main() {
         for day in schedule.days().iter().filter(|day| day.is_trading_day()) {
             println!(
                 "{}\t{:?}\t{:?}\t{:?}",
-                day.date(),
+                day.date().unwrap(),
                 day.opening_auction_start_time(),
                 day.trading_time(),
                 day.closing_auction_end_time()

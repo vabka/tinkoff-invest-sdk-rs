@@ -1,4 +1,4 @@
-use chrono::{Date, DateTime, TimeZone, Utc};
+use chrono::{NaiveDate, NaiveDateTime};
 use tinkoff_invest_grpc::{api, decimal::rust_decimal::Decimal};
 
 mod trading_schedule;
@@ -28,8 +28,8 @@ impl From<api::MoneyValue> for MoneyValue {
 }
 #[derive(Debug, Clone)]
 pub struct CountryOfRisk {
-    code: String,
-    name: String,
+    // code: String,
+    // name: String,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -115,22 +115,22 @@ pub enum RealExchange {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Short {
-    /// Коэффициент ставки риска короткой позиции по инструменту.
-    kshort: Decimal,
-    /// Ставка риска минимальной маржи в шорт.
-    dshort: Decimal,
-    /// Ставка риска начальной маржи в шорт.
-    dshort_min: Decimal,
+    // /// Коэффициент ставки риска короткой позиции по инструменту.
+    // kshort: Decimal,
+    // /// Ставка риска минимальной маржи в шорт.
+    // dshort: Decimal,
+    // /// Ставка риска начальной маржи в шорт.
+    // dshort_min: Decimal,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct Long {
-    /// Коэффициент ставки риска длинной позиции по инструменту.
-    klong: Decimal,
-    /// Ставка риска минимальной маржи в лонг.
-    dlong: Decimal,
-    /// Ставка риска начальной маржи в лонг.
-    dlong_min: Decimal,
+    // /// Коэффициент ставки риска длинной позиции по инструменту.
+    // klong: Decimal,
+    // /// Ставка риска минимальной маржи в лонг.
+    // dlong: Decimal,
+    // /// Ставка риска начальной маржи в лонг.
+    // dlong_min: Decimal,
 }
 impl From<api::RealExchange> for RealExchange {
     fn from(value: api::RealExchange) -> Self {
@@ -187,9 +187,9 @@ impl Bond {
         if self.0.short_enabled_flag {
             // TODO extra allocation
             Some(Short {
-                kshort: self.0.kshort.clone().map(Into::into)?,
-                dshort: self.0.dshort.clone().map(Into::into)?,
-                dshort_min: self.0.dshort_min.clone().map(Into::into)?,
+                // kshort: self.0.kshort.clone().map(Into::into)?,
+                // dshort: self.0.dshort.clone().map(Into::into)?,
+                // dshort_min: self.0.dshort_min.clone().map(Into::into)?,
             })
         } else {
             None
@@ -200,9 +200,9 @@ impl Bond {
     pub fn long(&self) -> Option<Long> {
         // TODO extra allocation
         Some(Long {
-            klong: self.0.klong.clone().map(Into::into)?,
-            dlong: self.0.dlong.clone().map(Into::into)?,
-            dlong_min: self.0.dlong_min.clone().map(Into::into)?,
+            // klong: self.0.klong.clone().map(Into::into)?,
+            // dlong: self.0.dlong.clone().map(Into::into)?,
+            // dlong_min: self.0.dlong_min.clone().map(Into::into)?,
         })
     }
 
@@ -217,11 +217,11 @@ impl Bond {
     }
 
     #[inline]
-    pub fn maturity_date(&self) -> Option<Date<Utc>> {
+    pub fn maturity_date(&self) -> Option<NaiveDate> {
         self.0
             .maturity_date
             .as_ref()
-            .map(grpc_timestamp_to_chrono_timestamp)
+            .and_then(grpc_timestamp_to_chrono_timestamp)
             .map(|d| d.date())
     }
 
@@ -232,20 +232,20 @@ impl Bond {
     }
 
     #[inline]
-    pub fn state_reg_date(&self) -> Option<Date<Utc>> {
+    pub fn state_reg_date(&self) -> Option<NaiveDate> {
         self.0
             .state_reg_date
             .as_ref()
-            .map(grpc_timestamp_to_chrono_timestamp)
-            .map(|d| d.date())
+            .and_then(grpc_timestamp_to_chrono_timestamp)
+            .map(|d|d.date())
     }
 
     #[inline]
-    pub fn placement_date(&self) -> Option<Date<Utc>> {
+    pub fn placement_date(&self) -> Option<NaiveDate> {
         self.0
             .placement_date
             .as_ref()
-            .map(grpc_timestamp_to_chrono_timestamp)
+            .and_then(grpc_timestamp_to_chrono_timestamp)
             .map(|d| d.date())
     }
 
@@ -263,8 +263,8 @@ impl Bond {
     pub fn country_of_risk(&self) -> CountryOfRisk {
         // TODO extra allocation
         CountryOfRisk {
-            code: self.0.country_of_risk.clone(),
-            name: self.0.country_of_risk_name.clone(),
+            // code: self.0.country_of_risk.clone(),
+            // name: self.0.country_of_risk_name.clone(),
         }
     }
 
@@ -358,21 +358,21 @@ impl Bond {
     }
 
     #[inline]
-    pub fn first_minute_candle_date(&self) -> Option<DateTime<Utc>> {
+    pub fn first_minute_candle_date(&self) -> Option<NaiveDateTime> {
         // TODO allocation
         self.0
             .first_1day_candle_date
             .as_ref()
-            .map(grpc_timestamp_to_chrono_timestamp)
+            .and_then(grpc_timestamp_to_chrono_timestamp)
     }
 
     #[inline]
-    pub fn first_day_candle_date(&self) -> Option<DateTime<Utc>> {
+    pub fn first_day_candle_date(&self) -> Option<NaiveDateTime> {
         // TODO allocation
         self.0
             .first_1day_candle_date
             .as_ref()
-            .map(grpc_timestamp_to_chrono_timestamp)
+            .and_then(grpc_timestamp_to_chrono_timestamp)
     }
 }
 
@@ -425,19 +425,19 @@ impl Account {
         }
     }
 
-    pub fn opened_date(&self) -> Option<Date<Utc>> {
+    pub fn opened_date(&self) -> Option<NaiveDate> {
         self.0
             .opened_date
             .as_ref()
-            .map(grpc_timestamp_to_chrono_timestamp)
+            .and_then(grpc_timestamp_to_chrono_timestamp)
             .map(|t| t.date())
     }
 
-    pub fn closed_date(&self) -> Option<Date<Utc>> {
+    pub fn closed_date(&self) -> Option<NaiveDate> {
         self.0
             .closed_date
             .as_ref()
-            .map(grpc_timestamp_to_chrono_timestamp)
+            .and_then(grpc_timestamp_to_chrono_timestamp)
             .map(|t| t.date())
     }
 
@@ -465,11 +465,11 @@ impl From<api::Account> for Account {
     }
 }
 
-fn grpc_timestamp_to_chrono_timestamp(t: &prost_types::Timestamp) -> DateTime<Utc> {
-    Utc.timestamp(t.seconds, t.nanos as u32)
+fn grpc_timestamp_to_chrono_timestamp(t: &prost_types::Timestamp) -> Option<NaiveDateTime> {
+    NaiveDateTime::from_timestamp_opt(t.seconds, t.nanos as u32)
 }
 
-pub(crate) fn chrono_timestamp_to_grpc_timestamp(t: DateTime<Utc>) -> prost_types::Timestamp {
+pub(crate) fn chrono_timestamp_to_grpc_timestamp(t: NaiveDateTime) -> prost_types::Timestamp {
     let seconds = t.timestamp();
     let nanos = t.timestamp_subsec_nanos() as i32;
     prost_types::Timestamp { seconds, nanos }

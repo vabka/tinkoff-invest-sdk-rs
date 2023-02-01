@@ -1,6 +1,6 @@
 use std::ops::RangeInclusive;
 
-use chrono::{Date, Utc};
+use chrono::{NaiveDate};
 use tinkoff_invest_grpc::api::instruments_service_client::InstrumentsServiceClient;
 use tinkoff_invest_grpc::api::{self};
 use tinkoff_invest_grpc::Inner;
@@ -67,16 +67,19 @@ impl InstrumentsClient {
 
     pub async fn trading_schedules_all(
         &mut self,
-        range: RangeInclusive<Date<Utc>>,
+        range: RangeInclusive<NaiveDate>,
     ) -> crate::Result<Vec<types::TradingSchedule>> {
         let (start, end) = range.into_inner();
         let req = api::TradingSchedulesRequest {
             exchange: "".to_owned(),
             from: Some(types::chrono_timestamp_to_grpc_timestamp(
-                start.and_hms(0, 0, 0),
+                start
+                    .and_hms_opt(0, 0, 0)
+                    .expect("Invalid hour/minute/second"),
             )),
             to: Some(types::chrono_timestamp_to_grpc_timestamp(
-                end.and_hms(23, 59, 59),
+                end.and_hms_opt(23, 59, 59)
+                    .expect("Invalid hour/minute/second"),
             )),
         };
         self.trading_schedules_internal(req).await
@@ -95,16 +98,19 @@ impl InstrumentsClient {
     pub async fn trading_schedules(
         &mut self,
         exchange: String,
-        range: RangeInclusive<Date<Utc>>,
+        range: RangeInclusive<NaiveDate>,
     ) -> crate::Result<Vec<types::TradingSchedule>> {
         let (start, end) = range.into_inner();
         let req = api::TradingSchedulesRequest {
             exchange: exchange,
             from: Some(types::chrono_timestamp_to_grpc_timestamp(
-                start.and_hms(0, 0, 0),
+                start
+                    .and_hms_opt(0, 0, 0)
+                    .expect("Invalid hour/minute/second"),
             )),
             to: Some(types::chrono_timestamp_to_grpc_timestamp(
-                end.and_hms(23, 59, 59),
+                end.and_hms_opt(23, 59, 59)
+                    .expect("Invalid hour/minute/second"),
             )),
         };
         self.trading_schedules_internal(req).await
