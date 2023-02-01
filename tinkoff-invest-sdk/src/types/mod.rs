@@ -14,6 +14,13 @@ pub use user_info::StreamLimit;
 pub use user_info::UnaryLimit;
 pub use user_info::UserTariff;
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum InstrumentsList {
+    Unspecified,
+    Base,
+    All
+}
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct MoneyValue {
     pub currency: String,

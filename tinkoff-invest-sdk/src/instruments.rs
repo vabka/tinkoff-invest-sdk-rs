@@ -1,11 +1,12 @@
 use std::ops::RangeInclusive;
 
-use chrono::{NaiveDate};
+use chrono::NaiveDate;
 use tinkoff_invest_grpc::api::instruments_service_client::InstrumentsServiceClient;
 use tinkoff_invest_grpc::api::{self};
 use tinkoff_invest_grpc::Inner;
 
 use crate::error::{ErrorType, TinkoffInvestError};
+use crate::types::InstrumentsList;
 use crate::{
     service,
     types::{self},
@@ -116,7 +117,21 @@ impl InstrumentsClient {
         self.trading_schedules_internal(req).await
     }
 
-    pub async fn bonds(&mut self) {
-        todo!()
+    pub async fn bonds(&mut self, list: InstrumentsList) -> crate::Result<Vec<types::Bond>> {
+        let numeric_status =  match list {
+            InstrumentsList::Unspecified => api::InstrumentStatus::Unspecified,
+            InstrumentsList::Base => api::InstrumentStatus::Base,
+            InstrumentsList::All => api::InstrumentStatus::All,
+        } as i32;
+
+        let response = self
+            .internal
+            .bonds(api::InstrumentsRequest {
+                instrument_status: numeric_status,
+            })
+            .await?;
+        let data = response.into_inner();
+        let bonds = data.instruments;
+        return Ok(unsafe{ std::mem::transmute(bonds)})
     }
 }
