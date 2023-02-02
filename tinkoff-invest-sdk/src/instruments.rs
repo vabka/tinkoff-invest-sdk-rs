@@ -1,6 +1,8 @@
-use std::ops::RangeInclusive;
+use std::ops::{RangeBounds, RangeInclusive};
+use std::time::Duration;
 
-use chrono::NaiveDate;
+use chrono::{Days, NaiveDate};
+use prost_types::Timestamp;
 use tinkoff_invest_grpc::api::instruments_service_client::InstrumentsServiceClient;
 use tinkoff_invest_grpc::api::{self};
 use tinkoff_invest_grpc::Inner;
@@ -41,6 +43,38 @@ impl From<InstrumentRequest> for api::InstrumentRequest {
     }
 }
 
+fn date_range_to_timestamp_pair(
+    range: impl RangeBounds<NaiveDate>,
+) -> (Option<Timestamp>, Option<Timestamp>) {
+    let start = match range.start_bound() {
+        std::ops::Bound::Included(date) => Some(types::chrono_timestamp_to_grpc_timestamp(
+            date.and_hms_opt(0, 0, 0)
+                .expect("Invalid hour/minute/second"),
+        )),
+        std::ops::Bound::Excluded(date) => Some(types::chrono_timestamp_to_grpc_timestamp(
+            date.and_hms_opt(0, 0, 0)
+                .expect("Invalid hour/minute/second")
+                - chrono::Duration::days(1),
+        )),
+        std::ops::Bound::Unbounded => None,
+    };
+
+    let end = match range.end_bound() {
+        std::ops::Bound::Included(date) => Some(types::chrono_timestamp_to_grpc_timestamp(
+            date.and_hms_opt(0, 0, 0)
+                .expect("Invalid hour/minute/second"),
+        )),
+        std::ops::Bound::Excluded(date) => Some(types::chrono_timestamp_to_grpc_timestamp(
+            date.and_hms_opt(0, 0, 0)
+                .expect("Invalid hour/minute/second")
+                + chrono::Duration::days(1),
+        )),
+        std::ops::Bound::Unbounded => None,
+    };
+
+    (start, end)
+}
+
 service!(InstrumentsClient, InstrumentsServiceClient<Inner>);
 impl InstrumentsClient {
     pub async fn bond_by(
@@ -68,20 +102,13 @@ impl InstrumentsClient {
 
     pub async fn trading_schedules_all(
         &mut self,
-        range: RangeInclusive<NaiveDate>,
+        range: impl RangeBounds<NaiveDate>,
     ) -> crate::Result<Vec<types::TradingSchedule>> {
-        let (start, end) = range.into_inner();
+        let (start, end) = date_range_to_timestamp_pair(range);
         let req = api::TradingSchedulesRequest {
             exchange: "".to_owned(),
-            from: Some(types::chrono_timestamp_to_grpc_timestamp(
-                start
-                    .and_hms_opt(0, 0, 0)
-                    .expect("Invalid hour/minute/second"),
-            )),
-            to: Some(types::chrono_timestamp_to_grpc_timestamp(
-                end.and_hms_opt(23, 59, 59)
-                    .expect("Invalid hour/minute/second"),
-            )),
+            from: start,
+            to: end,
         };
         self.trading_schedules_internal(req).await
     }
@@ -93,32 +120,25 @@ impl InstrumentsClient {
         let res = self.internal.trading_schedules(req).await?;
         let data = res.into_inner();
         let schedules = data.exchanges;
-        Ok(unsafe { std::mem::transmute(schedules) })
+        Ok(schedules.into_iter().map(Into::into).collect())
     }
 
     pub async fn trading_schedules(
         &mut self,
         exchange: String,
-        range: RangeInclusive<NaiveDate>,
+        range: impl RangeBounds<NaiveDate>,
     ) -> crate::Result<Vec<types::TradingSchedule>> {
-        let (start, end) = range.into_inner();
+        let (start, end) = date_range_to_timestamp_pair(range);
         let req = api::TradingSchedulesRequest {
             exchange: exchange,
-            from: Some(types::chrono_timestamp_to_grpc_timestamp(
-                start
-                    .and_hms_opt(0, 0, 0)
-                    .expect("Invalid hour/minute/second"),
-            )),
-            to: Some(types::chrono_timestamp_to_grpc_timestamp(
-                end.and_hms_opt(23, 59, 59)
-                    .expect("Invalid hour/minute/second"),
-            )),
+            from: start,
+            to: end,
         };
         self.trading_schedules_internal(req).await
     }
 
     pub async fn bonds(&mut self, list: InstrumentsList) -> crate::Result<Vec<types::Bond>> {
-        let numeric_status =  match list {
+        let numeric_status = match list {
             InstrumentsList::Base => api::InstrumentStatus::Base,
             InstrumentsList::All => api::InstrumentStatus::All,
         } as i32;
@@ -131,6 +151,56 @@ impl InstrumentsClient {
             .await?;
         let data = response.into_inner();
         let bonds = data.instruments;
-        return Ok(unsafe{ std::mem::transmute(bonds)})
+        Ok(bonds.into_iter().map(Into::into).collect())
     }
+
+    pub async fn get_bond_coupons(
+        &mut self,
+        figi: String,
+        range: impl RangeBounds<NaiveDate>,
+    ) -> crate::Result<Vec<types::Coupon>> {
+        let (start, end) = date_range_to_timestamp_pair(range);
+        let response = self
+            .internal
+            .get_bond_coupons(api::GetBondCouponsRequest {
+                figi: figi,
+                from: start,
+                to: end,
+            })
+            .await?;
+        let data = response.into_inner();
+        let coupons = data.events;
+        Ok(coupons.into_iter().map(Into::into).collect())
+    }
+
+    pub async fn currency_by() {}
+
+    pub async fn currencies() {}
+
+    pub async fn etf_by() {}
+    pub async fn etfs() {}
+    pub async fn future_by() {}
+
+    pub async fn futures() {}
+
+    pub async fn share_by() {}
+
+    pub async fn shares() {}
+    pub async fn get_accrues_interests() {}
+
+    pub async fn get_futures_margin() {}
+    pub async fn get_instrument_by() {}
+    pub async fn get_dividends() {}
+
+    pub async fn get_asset_by() {}
+    pub async fn get_assets() {}
+    pub async fn get_favorites() {}
+
+    pub async fn edit_favorites() {}
+    pub async fn get_countries() {}
+
+    pub async fn find_instrument() {}
+    pub async fn get_brands() {}
+
+    pub async fn get_brand_by() {}
 }

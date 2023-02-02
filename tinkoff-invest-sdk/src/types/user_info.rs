@@ -32,6 +32,7 @@ impl UserInfo {
 }
 
 #[derive(Debug, Clone)]
+#[repr(transparent)]
 pub struct UnaryLimit(api::UnaryLimit);
 impl From<api::UnaryLimit> for UnaryLimit {
     #[inline(always)]
@@ -54,6 +55,7 @@ impl UnaryLimit {
 }
 
 #[derive(Debug, Clone)]
+#[repr(transparent)]
 pub struct StreamLimit(api::StreamLimit);
 impl From<api::StreamLimit> for StreamLimit {
     #[inline(always)]

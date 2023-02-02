@@ -90,6 +90,7 @@ impl From<api::TradingSchedule> for TradingSchedule {
         Self(value)
     }
 }
+
 impl TradingSchedule {
     #[inline(always)]
     pub fn exchange(&self) -> &str {

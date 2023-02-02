@@ -2,22 +2,33 @@ use chrono::{NaiveDate, NaiveDateTime};
 use tinkoff_invest_grpc::{api, decimal::rust_decimal::Decimal};
 
 mod trading_schedule;
-pub use trading_schedule::TradingSchedule;
 pub use trading_schedule::TradingDay;
+pub use trading_schedule::TradingSchedule;
 
 mod margin_attributes;
 pub use margin_attributes::MarginAttributes;
 
 mod user_info;
-pub use user_info::UserInfo;
 pub use user_info::StreamLimit;
 pub use user_info::UnaryLimit;
+pub use user_info::UserInfo;
 pub use user_info::UserTariff;
+
+#[repr(transparent)]
+pub struct Coupon {
+    inner: api::Coupon,
+}
+
+impl From<api::Coupon> for Coupon {
+    fn from(value: api::Coupon) -> Self {
+        Coupon { inner: value }
+    }
+}
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum InstrumentsList {
     Base,
-    All
+    All,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -243,7 +254,7 @@ impl Bond {
             .state_reg_date
             .as_ref()
             .and_then(grpc_timestamp_to_chrono_timestamp)
-            .map(|d|d.date())
+            .map(|d| d.date())
     }
 
     #[inline]
