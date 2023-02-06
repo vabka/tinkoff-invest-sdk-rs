@@ -25,6 +25,86 @@ impl From<api::Coupon> for Coupon {
     }
 }
 
+impl Coupon {
+    /// Figi-идентификатор инструмента.
+    pub fn figi(&self) -> &str {
+        &self.inner.figi
+    }
+    
+    /// Дата выплаты купона.
+    pub fn coupon_date(&self) -> Option<NaiveDateTime>{
+        self.inner.coupon_date.as_ref().and_then(|ts| grpc_timestamp_to_chrono_timestamp(ts))
+    }
+
+    /// Номер купона.
+    pub fn coupon_number(&self) -> i64 {
+        self.inner.coupon_number
+    }
+
+    /// (Опционально) Дата фиксации реестра для выплаты купона.
+    pub fn fix_date(&self) ->Option<NaiveDateTime> {
+        self.inner.fix_date.as_ref().and_then(|ts| grpc_timestamp_to_chrono_timestamp(ts))
+    }
+
+    /// Выплата на одну облигацию.
+    pub fn pay_one_bond(&self) -> Option<MoneyValue>{
+        self.inner.pay_one_bond.map(Into::into)
+    }
+    
+    /// Тип купона.
+    pub fn coupon_type(&self) -> Option<CouponType> {
+        CouponType::
+    }
+    
+    /// Начало купонного периода.
+    pub fn coupon_start_date(): ::core::option::Option<::prost_types::Timestamp>,
+    
+    /// Окончание купонного периода.
+    pub coupon_end_date: ::core::option::Option<::prost_types::Timestamp>,
+    
+    /// Купонный период в днях.
+    pub coupon_period: i32,
+}
+
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
+#[repr(i32)]
+pub enum CouponType {
+    /// Неопределенное значение
+    Unspecified = 0,
+    /// Постоянный
+    Constant = 1,
+    /// Плавающий
+    Floating = 2,
+    /// Дисконт
+    Discount = 3,
+    /// Ипотечный
+    Mortgage = 4,
+    /// Фиксированный
+    Fix = 5,
+    /// Переменный
+    Variable = 6,
+    /// Прочее
+    Other = 7,
+}
+enum CouponTypeConversionError {
+    OutOfRange
+}
+impl TryFrom<i32> for CouponType {
+    type Error = ();
+    fn try_from(value: i32) -> Result<Self, Self::Error>{
+        match value {
+            0 => Ok(Self::Unspecified),
+            1 => Ok(Self::Constant),
+            2 => Ok(Self::Floating),
+            3 => Ok(Self::Discount),
+            4 => Ok(Self::Mortgage),
+            5 => Ok(Self::Fix),
+            6 => Ok(Self::Variable),
+            7 => Ok(Self::Other),
+            _ => Err(CouponType::OutOfRange)
+        }
+    }
+}
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum InstrumentsList {
     Base,
@@ -32,17 +112,25 @@ pub enum InstrumentsList {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct MoneyValue {
-    pub currency: String,
-    pub amount: Decimal,
-}
+#[repr(transparent)]
+pub struct MoneyValue(api::MoneyValue);
 
 impl From<api::MoneyValue> for MoneyValue {
     fn from(value: api::MoneyValue) -> Self {
-        let (currency, amount) = value.into();
-        Self { currency, amount }
+        Self(value)
     }
 }
+
+impl MoneyValue {
+    pub fn currency(&self) -> &str {
+        &self.0.currency
+    }
+
+    pub fn value(&self) -> Decimal {
+        self.0.into()
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct CountryOfRisk {
     // code: String,
