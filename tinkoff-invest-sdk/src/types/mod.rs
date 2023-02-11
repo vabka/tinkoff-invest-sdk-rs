@@ -53,65 +53,64 @@ impl Coupon {
     
     /// Тип купона.
     pub fn coupon_type(&self) -> Option<CouponType> {
-        CouponType::
+        match self.inner.coupon_type {
+            1 => Some(CouponType::Constant),
+            2 => Some(CouponType::Floating),
+            3 => Some(CouponType::Discount),
+            4 => Some(CouponType::Mortgage),
+            5 => Some(CouponType::Fix),
+            6 => Some(CouponType::Variable),
+            7 => Some(CouponType::Other),
+            _ => None
+        }
     }
     
     /// Начало купонного периода.
-    pub fn coupon_start_date(): ::core::option::Option<::prost_types::Timestamp>,
+    pub fn coupon_start_date(&self) -> Option<NaiveDate> {
+        self.inner.coupon_start_date.as_ref()
+        .and_then(grpc_timestamp_to_chrono_timestamp)
+        .map(|x|x.date())
+    }
     
     /// Окончание купонного периода.
-    pub coupon_end_date: ::core::option::Option<::prost_types::Timestamp>,
+    pub fn coupon_end_date(&self) -> Option<NaiveDate> {
+        self.inner.coupon_end_date.as_ref()
+        .and_then(grpc_timestamp_to_chrono_timestamp)
+        .map(|x|x.date())
+    }
     
     /// Купонный период в днях.
-    pub coupon_period: i32,
+    pub fn coupon_period(&self) -> i32 {
+        self.inner.coupon_period
+    }
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 #[repr(i32)]
 pub enum CouponType {
-    /// Неопределенное значение
-    Unspecified = 0,
     /// Постоянный
-    Constant = 1,
+    Constant,
     /// Плавающий
-    Floating = 2,
+    Floating,
     /// Дисконт
-    Discount = 3,
+    Discount,
     /// Ипотечный
-    Mortgage = 4,
+    Mortgage,
     /// Фиксированный
-    Fix = 5,
+    Fix,
     /// Переменный
-    Variable = 6,
+    Variable,
     /// Прочее
-    Other = 7,
+    Other,
 }
-enum CouponTypeConversionError {
-    OutOfRange
-}
-impl TryFrom<i32> for CouponType {
-    type Error = ();
-    fn try_from(value: i32) -> Result<Self, Self::Error>{
-        match value {
-            0 => Ok(Self::Unspecified),
-            1 => Ok(Self::Constant),
-            2 => Ok(Self::Floating),
-            3 => Ok(Self::Discount),
-            4 => Ok(Self::Mortgage),
-            5 => Ok(Self::Fix),
-            6 => Ok(Self::Variable),
-            7 => Ok(Self::Other),
-            _ => Err(CouponType::OutOfRange)
-        }
-    }
-}
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum InstrumentsList {
     Base,
     All,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone,)]
 #[repr(transparent)]
 pub struct MoneyValue(api::MoneyValue);
 
@@ -570,7 +569,7 @@ impl From<api::Account> for Account {
     }
 }
 
-fn grpc_timestamp_to_chrono_timestamp(t: &prost_types::Timestamp) -> Option<NaiveDateTime> {
+pub(crate) fn grpc_timestamp_to_chrono_timestamp(t: &prost_types::Timestamp) -> Option<NaiveDateTime> {
     NaiveDateTime::from_timestamp_opt(t.seconds, t.nanos as u32)
 }
 

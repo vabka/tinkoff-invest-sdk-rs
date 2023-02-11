@@ -1,16 +1,18 @@
 use std::ops::{RangeBounds};
 
-use chrono::{Days, NaiveDate};
-use prost_types::Timestamp;
+use chrono::{NaiveDate};
+
 use tinkoff_invest_grpc::api::instruments_service_client::InstrumentsServiceClient;
-use tinkoff_invest_grpc::api::{self};
+use tinkoff_invest_grpc::api;
 use tinkoff_invest_grpc::Inner;
 
 use crate::error::{ErrorType, TinkoffInvestError};
+use crate::shared::EasyConvert;
+use crate::shared::date_range_to_timestamp_pair;
 use crate::types::InstrumentsList;
 use crate::{
     service,
-    types::{self},
+    types,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -40,38 +42,6 @@ impl From<InstrumentRequest> for api::InstrumentRequest {
         };
         request
     }
-}
-
-fn date_range_to_timestamp_pair(
-    range: impl RangeBounds<NaiveDate>,
-) -> (Option<Timestamp>, Option<Timestamp>) {
-    let start = match range.start_bound() {
-        std::ops::Bound::Included(date) => Some(types::chrono_timestamp_to_grpc_timestamp(
-            date.and_hms_opt(0, 0, 0)
-                .expect("Invalid hour/minute/second"),
-        )),
-        std::ops::Bound::Excluded(date) => Some(types::chrono_timestamp_to_grpc_timestamp(
-            date.and_hms_opt(0, 0, 0)
-                .expect("Invalid hour/minute/second")
-                - chrono::Duration::days(1),
-        )),
-        std::ops::Bound::Unbounded => None,
-    };
-
-    let end = match range.end_bound() {
-        std::ops::Bound::Included(date) => Some(types::chrono_timestamp_to_grpc_timestamp(
-            date.and_hms_opt(0, 0, 0)
-                .expect("Invalid hour/minute/second"),
-        )),
-        std::ops::Bound::Excluded(date) => Some(types::chrono_timestamp_to_grpc_timestamp(
-            date.and_hms_opt(0, 0, 0)
-                .expect("Invalid hour/minute/second")
-                + chrono::Duration::days(1),
-        )),
-        std::ops::Bound::Unbounded => None,
-    };
-
-    (start, end)
 }
 
 service!(InstrumentsClient, InstrumentsServiceClient<Inner>);
@@ -119,7 +89,7 @@ impl InstrumentsClient {
         let res = self.internal.trading_schedules(req).await?;
         let data = res.into_inner();
         let schedules = data.exchanges;
-        Ok(schedules.into_iter().map(Into::into).collect())
+        Ok(schedules.convert())
     }
 
     pub async fn trading_schedules(
@@ -150,7 +120,7 @@ impl InstrumentsClient {
             .await?;
         let data = response.into_inner();
         let bonds = data.instruments;
-        Ok(bonds.into_iter().map(Into::into).collect())
+        Ok(bonds.convert())
     }
 
     pub async fn get_bond_coupons(
@@ -169,7 +139,7 @@ impl InstrumentsClient {
             .await?;
         let data = response.into_inner();
         let coupons = data.events;
-        Ok(coupons.into_iter().map(Into::into).collect())
+        Ok(coupons.convert())
     }
 
     pub async fn currency_by() {}

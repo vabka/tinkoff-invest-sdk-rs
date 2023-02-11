@@ -1,4 +1,5 @@
 mod generated;
+mod shared;
 pub mod instruments;
 pub mod types;
 pub mod users;
